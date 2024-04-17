@@ -15,7 +15,7 @@ app.use("/users", usersRoute);
 
 app.use((err, req, res, next) => {
   if (err) {
-    console.log(err)
+    console.log(err,"line1i8")
     responseHandler.sendError(req, res, err.message)
   }
 });

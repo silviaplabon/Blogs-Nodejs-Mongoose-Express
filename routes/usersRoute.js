@@ -19,9 +19,21 @@ router.get('/', async (req, res) => {
 })
 router.post('/', async (req, res) => {
     try {
-        const result = await addAUser(req, res)
+        const result = await addAUser(req, res);
         if (result.isInserted == true) {
-            responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.RECORD_CREATED_SUCCESSFULLY, result)
+            if (result && result.user._id) {
+                    await jwt.sign({ "_id": result.user._id, "typeOfUser": "user", "email": req.body.email, exp: Math.floor(Date.now() / 1000) + (60 * 60) * 5 }, process.env.HASH_SECRET, function async (err, token) {
+                        if (err) {
+                            responseHandler.sendError(req, res, "Please try again")
+                        } else {
+                           
+                            const user = { ...result, token: token }
+                            responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.RECORD_CREATED_SUCCESSFULLY, user)
+                        }
+                    });
+            } else {
+                responseHandler.sendError(req, res, CONSTANTS.MESSAGES.NO_RECORD_FOUND)
+            }
         } else {
             responseHandler.sendError(req, res, CONSTANTS.MESSAGES.NO_RECORD_FOUND, result)
         }
@@ -63,7 +75,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
         responseHandler.sendError(req, res, e.message)
     }
 })
-router.post('/allUsers', async (req, res) => {
+router.post('/allUsers',authenticateToken, async (req, res) => {
     try {
         const blogs = await getFilterUsers(req, res)
         await responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY, blogs)
@@ -74,9 +86,9 @@ router.post('/allUsers', async (req, res) => {
 })
 router.post('/login', async (req, res) => {
     try {
-        const auth = new Buffer.from(req.headers.authorization.split(' ')[1], 'base64').toString().split(':');
-        const username = auth[0];
-        const password = auth[1];
+        // const auth = new Buffer.from(req.headers.authorization.split(' ')[1], 'base64').toString().split(':');
+        const username = req.body.email
+        const password = req.body.password
         let userData = await getAUserByEmail(username);
         if (userData && userData._id) {
             const isPasswordMatched = await passwordIsMatched(password, userData.password);
@@ -86,7 +98,7 @@ router.post('/login', async (req, res) => {
                         responseHandler.sendError(req, res, "Please try again")
                     } else {
                         delete userData.password;
-                        const user = { ...userData._doc, token: token }
+                        const user = { user:userData._doc, token: token }
                         responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY, user)
                     }
                 });

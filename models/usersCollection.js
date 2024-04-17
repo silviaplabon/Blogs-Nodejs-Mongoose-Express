@@ -10,14 +10,11 @@ let UsersCollectionSchema = new Schema({
     email: {
         type: String
     },
-    fullName: {
+    name: {
         type: String
     },
-    professionTitle: {
-        type: String
-    },
-    birthDate: {
-        type: Number
+    isAgreedWithTerms:{
+        type:String
     },
     createdTime: {
         type: Number

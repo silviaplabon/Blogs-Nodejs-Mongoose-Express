@@ -14,30 +14,34 @@ const usersData = {
         const insertedOutput = {
             "id": newUser._id,
             "error": "",
-            "isInserted": false
+            "isInserted": false,
+            user:{}
         }
-        const auth = new Buffer.from(req.headers.authorization.split(' ')[1], 'base64').toString().split(':');
-        const username = auth[0];
-        const password = auth[1];
+        const username =req.body.email
+        const password = req.body.password
         const user = await UsersCollection.findOne({ email: username });
-        console.log(user)
+  
         if (user && user.email) {
             insertedOutput._id = ""
             insertedOutput.error = CONSTANTS.MESSAGES.RECORD_ALREADY_EXISTS
+            return insertedOutput
         } else {
             req.body.password = await encryptedPassword(password);
             await UsersCollection.create({ ...newUser })
                 .then(result => {
                     console.log(result, "result")
+
                     insertedOutput.isInserted = true
+                    insertedOutput.user=result
+                    return insertedOutput
                 })
                 .catch((e) => {
                     insertedOutput.id = ""
                     insertedOutput.error = e.message;
-
+                    return insertedOutput
                 })
         }
-        return insertedOutput
+       
     },
     getAUser: async (req, res) => {
         return UsersCollection.findOne({ _id: req.params.id });
