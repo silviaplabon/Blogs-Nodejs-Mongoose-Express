@@ -7,6 +7,7 @@ const CONSTANTS = require("../utils/constants");
 const responseHandler = require("../utils/responseHandler");
 const BlogsCollection = require("../models/BlogsCollection");
 const RatingsCollection = require("../models/RatingsCollection");
+const ReactionsCollection = require("../models/ReactionCollection");
 
 const router = express.Router();
 router.get('/', async (req, res) => {
@@ -18,7 +19,7 @@ router.get('/', async (req, res) => {
         responseHandler.sendError(req, res, e.message)
     }
 })
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/',  async (req, res) => {
     try {
         const result = await addABlog(req, res)
         if (result.isInserted == true) {
@@ -54,12 +55,14 @@ router.delete('/:id', authenticateToken, async (req, res) => {
         responseHandler.sendError(req, res, e.message)
     }
 })
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id',  async (req, res) => {
     try {
         const blog = await getABlog(req, res)
         console.log(blog,":@@@@@@@blog.com")
         if(blog){
             await responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY, blog)
+        }else{
+            await  responseHandler.sendError(req, res, CONSTANTS.MESSAGES.NO_RECORD_FOUND)
         }
     }
     catch (e) {
@@ -125,7 +128,55 @@ router.post('/:blogId/reviews', async (req, res) => {
       res.status(500).json({ message: 'Server Error' });
     }
   });
+  router.post('/:blogId/reactions', async (req, res) => {
+    try {
+      const { reaction, userId } = req.body;
+      if(!reaction){
+        responseHandler.sendError(req, res, 'Please provide reaction')
+ 
+      }
+      
+      if (!req.params.blogId.match(/^[0-9a-fA-F]{24}$/)) {
+        responseHandler.sendError(req, res, 'Please provide correct blog id')
+      }
 
+      const product = await BlogsCollection.findById({ _id: req.params.blogId });
+      if (!product) {
+        responseHandler.sendError(req, res,CONSTANTS.MESSAGES.NO_RECORD_FOUND)
+      }
+
+      const existingReaction = await RatingsCollection.findOne({ product: req.params.blogId, user: userId });
+ 
+      let reactions=product.favouriteList?product.favouriteList:[];
+
+      if (existingReaction) {
+            existingReaction.reaction=reaction
+            await existingReaction.save();
+            const updatedReactions=reactions.filter(rating=>!(rating._id.equals(existingReaction._id)))
+            console.log(updatedReactions,"line102",existingReaction)
+            updatedReactions.push(existingReaction)
+            product.reactions=[...updatedReactions]
+            await product.save();
+            await responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY, product)
+
+      }else{
+        const reactionModel = new ReactionsCollection({
+            user: userId,
+            reaction 
+          });
+            reactions.push(reactionModel);
+            await reactionModel.save();
+            product.reactions=[...reactions]
+            await product.save();
+            await responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY, product)
+      }
+        
+  
+   } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server Error' });
+    }
+  });
 
 router.get("*", function (req, res) {
     responseHandler.send404(req, res, CONSTANTS.MESSAGES.INVALID_METHOD);

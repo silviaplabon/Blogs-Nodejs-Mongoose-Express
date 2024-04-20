@@ -20,11 +20,11 @@ const usersData = {
         const username =req.body.email
         const password = req.body.password
         const user = await UsersCollection.findOne({ email: username });
-  
+        console.log(user,"@@@@@@@@")
         if (user && user.email) {
             insertedOutput._id = ""
             insertedOutput.error = CONSTANTS.MESSAGES.RECORD_ALREADY_EXISTS
-            return insertedOutput
+            
         } else {
             req.body.password = await encryptedPassword(password);
             await UsersCollection.create({ ...newUser })
@@ -33,14 +33,15 @@ const usersData = {
 
                     insertedOutput.isInserted = true
                     insertedOutput.user=result
-                    return insertedOutput
+          
                 })
                 .catch((e) => {
                     insertedOutput.id = ""
                     insertedOutput.error = e.message;
-                    return insertedOutput
+                  
                 })
-        }
+            }
+            return insertedOutput
        
     },
     getAUser: async (req, res) => {

@@ -21,6 +21,9 @@ let UsersCollectionSchema = new Schema({
     },
     password: {
         type: String
+    },
+    profileImage:{
+        type:String
     }
 });
 

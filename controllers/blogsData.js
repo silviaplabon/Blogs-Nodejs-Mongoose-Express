@@ -30,7 +30,7 @@ const blogsData = {
     },
     getABlog: async (req, res) => {
        
-         return BlogsCollection.findOne({ _id: req.params.id })
+         return await  BlogsCollection.findOne({ _id: req.params.id })
         
     },
     updateABlog: async (req, res) => {

@@ -8,6 +8,11 @@ const RatingsCollectionSchema = new Schema({
   rating: { type: Number, required: true, min: 1, max: 5 },
   createdAt: { type: Date, default: Date.now }
 });
+const ReactionsCollectionSchema = new Schema({
+  user: { type:mongoose.ObjectId, ref: 'User', required: true }, 
+  reaction: { type: Boolean, required: true},
+  createdAt: { type: Date, default: Date.now }
+});
 
 let BlogsCollectionSchema = new Schema({
   _id: {
@@ -16,9 +21,12 @@ let BlogsCollectionSchema = new Schema({
   userId: {
     type: mongoose.ObjectId
   },
-  email: {
-    type: String
-  },
+ name:{
+  type:String
+ },
+ email:{
+  type:String
+ },
   title: {
     type: String
   },
@@ -43,8 +51,9 @@ let BlogsCollectionSchema = new Schema({
   createdTime: {
     type: Number
   },
-  ratings:[RatingsCollectionSchema]
+  ratings:[RatingsCollectionSchema],
+  reactions:[ReactionsCollectionSchema]
 });
 
 const BlogsCollection = mongoose.model("blogs_collection", BlogsCollectionSchema);
-module.exports = BlogsCollection
+module.exports = BlogsCollection;
