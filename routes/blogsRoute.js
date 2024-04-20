@@ -145,16 +145,18 @@ router.post('/:blogId/reviews', async (req, res) => {
         responseHandler.sendError(req, res,CONSTANTS.MESSAGES.NO_RECORD_FOUND)
       }
 
-      const existingReaction = await RatingsCollection.findOne({ product: req.params.blogId, user: userId });
- 
-      let reactions=product.favouriteList?product.favouriteList:[];
+      const existingReaction = await ReactionsCollection.findOne({ product: req.params.blogId, user: userId });
+      
+      let reactions=product.reactions?product.reactions:[];
+     
 
       if (existingReaction) {
             existingReaction.reaction=reaction
             await existingReaction.save();
-            const updatedReactions=reactions.filter(rating=>!(rating._id.equals(existingReaction._id)))
+            const updatedReactions=reactions.filter(reactionData=>!(reactionData._id.equals(existingReaction._id)))
             console.log(updatedReactions,"line102",existingReaction)
             updatedReactions.push(existingReaction)
+            
             product.reactions=[...updatedReactions]
             await product.save();
             await responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY, product)
@@ -166,8 +168,10 @@ router.post('/:blogId/reviews', async (req, res) => {
           });
             reactions.push(reactionModel);
             await reactionModel.save();
-            product.reactions=[...reactions]
-            await product.save();
+            if(reactions.length>0){
+                product.reactions=[...reactions]
+                await product.save();
+            }
             await responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY, product)
       }
         
