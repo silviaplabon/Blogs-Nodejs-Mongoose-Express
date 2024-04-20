@@ -1,6 +1,6 @@
 
 const express = require("express");
-const { addABlog, updateABlog, getAllBlogs, deleteABlog, getABlog, getFilterBlogs } = require("../controllers/blogsData");
+const { addABlog, updateABlog, getAllBlogs, deleteABlog, getABlog, getFilterBlogs, getAllBlogsByTabs } = require("../controllers/blogsData");
 const authenticateToken = require("../middleware/authenticateToken");
 
 const CONSTANTS = require("../utils/constants");
@@ -12,13 +12,27 @@ const ReactionsCollection = require("../models/ReactionCollection");
 const router = express.Router();
 router.get('/', async (req, res) => {
     try {
-        const blogs = await getAllBlogs(req, res)
-        await responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY, blogs)
+        console.log(req.query)
+        
+        const blogsData = await getAllBlogs(req, res);
+        console.log(blogsData,"@@@@@@@@@@@@blogs count")
+        await responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY,blogsData)
     }
     catch (e) {
         responseHandler.sendError(req, res, e.message)
     }
-})
+});
+
+router.get('/tabs/:tabId', async (req, res) => {
+    try {
+        const blogsData = await getAllBlogsByTabs(req, res);
+        console.log(blogsData,"@@@@@@@@@@@@blogs count")
+        await responseHandler.sendSuccess(req, res, CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY,blogsData)
+    }
+    catch (e) {
+        responseHandler.sendError(req, res, e.message)
+    }
+});
 router.post('/',  async (req, res) => {
     try {
         const result = await addABlog(req, res)

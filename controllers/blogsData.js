@@ -1,8 +1,194 @@
+const { query } = require("express");
 const BlogsCollection = require("../models/BlogsCollection");
 const blogsData = {
     getAllBlogs: async (req, res) => {
-        const data = await BlogsCollection.find({});
-        return data;
+        const queryObject={}
+        
+        if(req.query.userId){
+            queryObject.userId=req.query.userId
+        }
+  
+        if( req.query.category!=undefined){
+            queryObject.category=req.query.category.charAt(0)?.toUpperCase() + req.query.category?.slice(1);
+        } 
+        
+        const page = parseInt(req.query.page) || 1; 
+        
+        const limit = parseInt(req.query.limit)||10;
+
+        const skip = (page - 1) * limit;
+       
+        const data = await BlogsCollection.find(queryObject).skip(skip)
+        .limit(limit);
+        const totalCount = await BlogsCollection.countDocuments(queryObject);
+  
+        return {blogs:data,count:parseInt(totalCount/limit)}
+    },
+    getAllBlogsByTabs: async (req, res) => {
+        const queryObject={}
+  
+        if( req.query.category!=undefined){
+            queryObject.category=req.query.category.charAt(0)?.toUpperCase() + req.query.category?.slice(1);
+        } 
+        const page = req.query.page || 1; 
+        
+        const limit = parseInt(req.query.limit) || 10;
+
+        const skip = (page - 1) * limit;
+
+        if(req.params?.tabId=="LATEST"){    
+           
+            const data = await BlogsCollection.aggregate([
+                { $sort: { createdAt: -1 } },
+                { $skip: skip }, 
+                { $limit: limit }, 
+            ]);
+            const totalCount = await BlogsCollection.countDocuments();
+            return {blogs:data,count:Math.ceil(totalCount/limit)};
+
+        }else if(req.params?.tabId=="SPECIALS"){
+            if(queryObject?.category){
+                console.log('line50')
+                const data = await BlogsCollection.aggregate([
+                    { $match: {
+                        reactions: {
+                          $elemMatch: {
+                            reaction: true
+                          }
+                        }
+                      } }, 
+                    { $sort: { createdAt: -1 } },
+                    { $skip: skip }, 
+                    { $limit: limit }, 
+                ]);
+                const totalCount= await BlogsCollection.countDocuments({
+                    reactions: {
+                        $elemMatch: {
+                            reaction: true
+                        }
+                    }
+                })
+                return {blogs:data,count:Math.ceil(totalCount/limit)}
+               
+            }else{
+                const data = await BlogsCollection.aggregate([
+                    { 
+                        $match: { 
+                            $and: [
+                                {
+                                    reactions: {
+                                        $elemMatch: {
+                                            reaction: true
+                                        }
+                                    }
+                                },
+                                {
+                                    category: queryObject.category
+                                }
+                            ]
+                        } 
+                    }, 
+                    { $sort: { createdAt: -1 } },
+                    { $skip: skip }, 
+                    { $limit: limit }, 
+                ]);
+    
+                const totalCount = await BlogsCollection.countDocuments({
+                    $and: [
+                        {
+                            reactions: {
+                                $elemMatch: {
+                                    reaction: true
+                                }
+                            }
+                        },
+                        {
+                            category: queryObject.category
+                        }
+                    ]
+                });
+                return {blogs:data,count:Math.ceil(totalCount/limit)}
+            }
+            
+           
+
+        }else if(req.params?.tabId=="BEST RATED"){
+            console.log('line114')
+            if(queryObject?.category){
+                console.log('line115')
+                const data = await BlogsCollection.aggregate([
+                    {
+                        $match: {
+                            ratings: { $elemMatch: { rating: { $gt: 0 } } }
+                        }
+                    },
+                    {
+                        $addFields: {
+                            ratingsWithValues: {
+                                $filter: {
+                                    input: "$ratings",
+                                    as: "rating",
+                                    cond: { $gt: ["$$rating", 0] }
+                                }
+                            }
+                        }
+                    },
+                    { $sort: { "ratingsWithValues": -1, createdAt: -1 } }, 
+                    { $skip: skip },
+                    { $limit: limit },
+                ]);
+                
+                const totalCount= await BlogsCollection.countDocuments({
+                    ratings: { $elemMatch: { rating: { $gt: 0 } } }
+                })
+                return {blogs:data,count:Math.ceil(totalCount/limit)}
+               
+            }else{
+                const data = await BlogsCollection.aggregate([
+                    { 
+                        $match: { 
+                            $and: [
+                                {
+                                    ratings: { $elemMatch: { rating: { $gt: 0 } } }
+                                },
+                                {
+                                    category: queryObject.category
+                                }
+                            ]
+                        } 
+                    }, 
+                    {
+                        $addFields: {
+                            ratingsWithValues: {
+                                $filter: {
+                                    input: "$ratings",
+                                    as: "rating",
+                                    cond: { $gt: ["$$rating", 0] }
+                                }
+                            }
+                        }
+                    },
+                    { $sort: { "ratingsWithValues": -1, createdAt: -1 } }, 
+                    { $skip: skip }, 
+                    { $limit: limit }, 
+                ]);
+    
+                const totalCount = await BlogsCollection.countDocuments({
+                    $and: [
+                        {
+                            ratings: { $elemMatch: { rating: { $gt: 0 } } }
+                        },
+                        {
+                            category: queryObject.category
+                        }
+                    ]
+                });
+                return {blogs:data,count:Math.ceil(totalCount/limit)}
+            }
+            
+           
+
+        }
     },
     addABlog: async (req, res) => {
         const newBlog = req.body;
