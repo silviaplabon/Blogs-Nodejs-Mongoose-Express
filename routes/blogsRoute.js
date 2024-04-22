@@ -19,6 +19,7 @@ const RatingsCollection = require('../models/RatingsCollection');
 const ReactionsCollection = require('../models/ReactionCollection');
 const Comment = require('../models/CommentsCollection');
 const { default: mongoose } = require('mongoose');
+const CommentsCollection = require('../models/CommentsCollection');
 
 const router = express.Router();
 router.get('/', async (req, res) => {
@@ -45,28 +46,28 @@ router.get('/', async (req, res) => {
   }
 });
 router.get('/searchedBlogs', async (req, res) => {
-    try {
-      const blogsData = await getAllSearchedBlogs(req, res);
-      if (blogsData.isFetched) {
-        await responseHandler.sendSuccess(
-          req,
-          res,
-          CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY,
-          blogsData,
-        );
-      } else if (!blogsData.isFetched) {
-        responseHandler.sendError(
-          req,
-          res,
-          blogsData.errorMessage
-            ? blogsData.errorMessage
-            : 'Something went wrong',
-        );
-      }
-    } catch (e) {
-      responseHandler.sendError(req, res, e.message);
+  try {
+    const blogsData = await getAllSearchedBlogs(req, res);
+    if (blogsData.isFetched) {
+      await responseHandler.sendSuccess(
+        req,
+        res,
+        CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY,
+        blogsData,
+      );
+    } else if (!blogsData.isFetched) {
+      responseHandler.sendError(
+        req,
+        res,
+        blogsData.errorMessage
+          ? blogsData.errorMessage
+          : 'Something went wrong',
+      );
     }
-  });
+  } catch (e) {
+    responseHandler.sendError(req, res, e.message);
+  }
+});
 router.get('/tabs/:tabId', async (req, res) => {
   try {
     const blogsData = await getAllBlogsByTabs(req, res);
@@ -339,54 +340,146 @@ router.post('/:blogId/reactions', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
+router.delete('/:postId/deleteAComment', async function(req, res) {
+  try{
+  const commentId=req.params.postId;
+
+  const result1 = await CommentsCollection.deleteMany({ parentId:commentId });
+
+  const result2 = await CommentsCollection.deleteOne({ _id:commentId });
+  console.log(result1, result2);
+  await responseHandler.sendSuccess(
+    req,
+    res,
+    CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY,
+   {},
+  )
+  }catch(e){
+    responseHandler.sendError(
+      req,
+      res,
+      err.message ? err.message : 'Server Error',
+    )
+  }
+});
+
+router.post('/:commentId/editAComment', async function(req, res) {
+  try{
+    let comment = req.body;
+    const commentId=req.params.commentId;
+    CommentsCollection.updateOne({_id: commentId}, {$set: {commentText: comment.commentText}})
+    .exec()
+    .then( async result => 
+      await responseHandler.sendSuccess(
+        req,
+        res,
+        CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY,
+       {},
+      )
+      )
+    .catch(err => responseHandler.sendError(
+      req,
+      res,
+      err.message ? err.message : 'Server Error',
+    ))
+  }catch(e){
+    responseHandler.sendError(
+      req,
+      res,
+      err.message ? err.message : 'Server Error',
+    )
+  }
+});
+
+
 router.post('/:blogId/addAComment', async (req, res) => {
+  const blogId = req.params.blogId;
+
+  const { comment, userId,name ,profileImage} = req.body;
+
+  let data = {
+    author: {
+      id: userId,
+      name: name,
+      profileImage:profileImage
+    },
+    commentText: comment,
+  };
+  if(req.body.parentId){
+    data.parentId = req.body.parentId;
+  }
+
+  if ('depth' in req.body) {
+    data.depth = req.body.depth;
+  }
+  data.postId = blogId;
+  const commentModel = new CommentsCollection(data);
+  commentModel
+    .save()
+    .then(
+      async (comment) =>
+        await responseHandler.sendSuccess(
+          req,
+          res,
+          CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY,
+          comment,
+        ),
+    )
+    .catch((err) =>
+      responseHandler.sendError(
+        req,
+        res,
+        err.message ? err.message : 'Server Error',
+      ),
+    );
+});
+
+router.get('/comments/:postId', async (req, res) => {
+  const postId = req.params.postId;
+
+  CommentsCollection.find({ postId: postId })
+    .sort({ postedDate: 1 })
+    .lean()
+    .exec()
+    .then(async (comments) => {
     
-    const blogId = req.params.blogId;
-    const { comment, userId } = req.body;
-    
-    if (!req.params.blogId.match(/^[0-9a-fA-F]{24}$/)) {
-        responseHandler.sendError(req, res, 'Please provide correct blog id');
-    }
+      let rec = (comment, threads) => {
+        for (var thread in threads) {
+          value = threads[thread];
 
-    let commentObj = {
-        postedBy:userId,
-        postId:blogId,
-        text:comment, 
-    }
-    const datas= new Comment(commentObj)
-    const data= await datas.save();
-    res.send(data)
+          if (thread.toString() === comment.parentId.toString()) {
+            value.children[comment._id] = comment;
+            return;
+          }
 
-  });
-  router.post('/:blogId/addAReply', async (req, res) => {
-    
-    const blogId = req.params.blogId;
-    const { comment,commentId, userId } = req.body;
-    
-    if (!req.params.blogId.match(/^[0-9a-fA-F]{24}$/)) {
-        responseHandler.sendError(req, res, 'Please provide correct blog id');
-    }
+          if (value.children) {
+            rec(comment, value.children);
+          }
+        }
+      };
 
-    const replyObj = {
-        postedBy:mongoose.Types.ObjectId(userId),
-        postId:mongoose.Types.ObjectId(blogId),
-        text:comment,
-        parentComment:mongoose.Types.ObjectId(commentId)
-    }
-
-    const newReply = await new Comment(replyObj).save()
-    const data= await Comment.findOneAndUpdate({_id:commentId, blogId:blogId},{$push:{replies:newReply._id}})
-   
-    res.send(data);
-
-  });
-  router.get('/comments/:postId', async (req, res) => {
-    const postId=req.params.postId;
-          
-
-    const data=await Comment.find({postId: mongoose.Types.ObjectId(postId) });
-    res.send(data)
-  });
+      let threads = {},comment;
+      for (let i = 0; i < comments.length; i++) {
+        comment = comments[i];
+        comment['children'] = {};
+        let parentId = comment.parentId;
+        if (!parentId) {
+          threads[comment._id] = comment;
+          continue;
+        }
+        rec(comment, threads);
+      }
+     
+      await responseHandler.sendSuccess(
+        req,
+        res,
+        CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY,
+        { 'count': comments.length,
+        'comments': threads}
+      )
+    })
+    .catch((err) => res.status(500).json({ error: err }));
+});
 router.get('*', function (req, res) {
   responseHandler.send404(req, res, CONSTANTS.MESSAGES.INVALID_METHOD);
 });

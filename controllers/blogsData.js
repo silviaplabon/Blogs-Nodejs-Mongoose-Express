@@ -80,8 +80,7 @@ const blogsData = {
   },
   getAllSearchedBlogs: async (req, res) => {
     try {
-
-      const searchText=req.query.searchText;
+      const searchText = req.query.searchText;
 
       const page = parseInt(req.query.page) || 1;
 
@@ -89,30 +88,30 @@ const blogsData = {
 
       const skip = (page - 1) * limit;
 
-        const data = await BlogsCollection.aggregate([
-          { $match: {
-           "title": { $regex: 'Life', $options: 'g' }
-          }
+      const data = await BlogsCollection.aggregate([
+        {
+          $match: {
+            title: { $regex: 'Life', $options: 'g' },
           },
-          { $sort: { createdTime: -1 } },
-          { $skip: skip },
-          { $limit: limit },
-        ]);
-        
-        const totalCount = await BlogsCollection.countDocuments({
-            "$search": {
-               "regex": {
-                  "path": "title",
-                  "query": "(.*) Life"
-               }
-            }
-         });
-        return {
-          blogs: data,
-          count: Math.ceil(totalCount / limit),
-          isFetched: true,
-        };
+        },
+        { $sort: { createdTime: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+      ]);
 
+      const totalCount = await BlogsCollection.countDocuments({
+        $search: {
+          regex: {
+            path: 'title',
+            query: '(.*) Life',
+          },
+        },
+      });
+      return {
+        blogs: data,
+        count: Math.ceil(totalCount / limit),
+        isFetched: true,
+      };
     } catch (error) {
       return {
         blogs: [],
@@ -196,31 +195,11 @@ const blogsData = {
           count: Math.ceil(totalCount / limit),
           isFetched: true,
         };
-      } else if (req.params?.tabId == 'SPECIALS') {    
+      } else if (req.params?.tabId == 'SPECIALS') {
         if (category != undefined && category !== '') {
-            const data = await BlogsCollection.aggregate([
-                {
-                  $match: {
-                    $and: [
-                      {
-                        reactions: {
-                          $elemMatch: {
-                            reaction: true,
-                          },
-                        },
-                      },
-                      {
-                        category:category,
-                      },
-                    ],
-                  },
-                },
-                { $sort: { createdTime: -1 } },
-                { $skip: skip },
-                { $limit: limit },
-              ]);
-    
-              const totalCount = await BlogsCollection.countDocuments({
+          const data = await BlogsCollection.aggregate([
+            {
+              $match: {
                 $and: [
                   {
                     reactions: {
@@ -230,47 +209,66 @@ const blogsData = {
                     },
                   },
                   {
-                    category: queryObject.category,
+                    category: category,
                   },
                 ],
-              });
-              return {
-                blogs: data,
-                count: Math.ceil(totalCount / limit),
-                isFetched: true,
-              };
-            } else {
-            const data = await BlogsCollection.aggregate([
+              },
+            },
+            { $sort: { createdTime: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+          ]);
+
+          const totalCount = await BlogsCollection.countDocuments({
+            $and: [
               {
-                $match: {
-                  reactions: {
-                    $elemMatch: {
-                      reaction: true,
-                    },
+                reactions: {
+                  $elemMatch: {
+                    reaction: true,
                   },
                 },
               },
-              { $sort: { createdTime: -1 } },
-              { $skip: skip },
-              { $limit: limit },
-            ]);
-            const totalCount = await BlogsCollection.countDocuments({
-              reactions: {
-                $elemMatch: {
-                  reaction: true,
+              {
+                category: queryObject.category,
+              },
+            ],
+          });
+          return {
+            blogs: data,
+            count: Math.ceil(totalCount / limit),
+            isFetched: true,
+          };
+        } else {
+          const data = await BlogsCollection.aggregate([
+            {
+              $match: {
+                reactions: {
+                  $elemMatch: {
+                    reaction: true,
+                  },
                 },
               },
-            });
-            return {
-              blogs: data,
-              count: Math.ceil(totalCount / limit),
-              isFetched: true,
-            };
-         
+            },
+            { $sort: { createdTime: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+          ]);
+          const totalCount = await BlogsCollection.countDocuments({
+            reactions: {
+              $elemMatch: {
+                reaction: true,
+              },
+            },
+          });
+          return {
+            blogs: data,
+            count: Math.ceil(totalCount / limit),
+            isFetched: true,
+          };
         }
       } else if (req.params?.tabId == 'BEST RATED') {
         console.log('line114');
-             
+
         if (category != undefined && category != '') {
           console.log('line115');
           const data = await BlogsCollection.aggregate([
@@ -308,7 +306,7 @@ const blogsData = {
                 ratings: { $elemMatch: { rating: { $gt: 0 } } },
               },
               {
-                category:category,
+                category: category,
               },
             ],
           });
@@ -318,37 +316,36 @@ const blogsData = {
             isFetched: true,
           };
         } else {
-            const data = await BlogsCollection.aggregate([
-              {
-                $match: {
-                  ratings: { $elemMatch: { rating: { $gt: 0 } } },
-                },
+          const data = await BlogsCollection.aggregate([
+            {
+              $match: {
+                ratings: { $elemMatch: { rating: { $gt: 0 } } },
               },
-              {
-                $addFields: {
-                  ratingsWithValues: {
-                    $filter: {
-                      input: '$ratings',
-                      as: 'rating',
-                      cond: { $gt: ['$$rating', 0] },
-                    },
+            },
+            {
+              $addFields: {
+                ratingsWithValues: {
+                  $filter: {
+                    input: '$ratings',
+                    as: 'rating',
+                    cond: { $gt: ['$$rating', 0] },
                   },
                 },
               },
-              { $sort: { ratingsWithValues: -1, createdTime: -1 } },
-              { $skip: skip },
-              { $limit: limit },
-            ]);
-  
-            const totalCount = await BlogsCollection.countDocuments({
-              ratings: { $elemMatch: { rating: { $gt: 0 } } },
-            });
-            return {
-              blogs: data,
-              count: Math.ceil(totalCount / limit),
-              isFetched: true,
-            };
-         
+            },
+            { $sort: { ratingsWithValues: -1, createdTime: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+          ]);
+
+          const totalCount = await BlogsCollection.countDocuments({
+            ratings: { $elemMatch: { rating: { $gt: 0 } } },
+          });
+          return {
+            blogs: data,
+            count: Math.ceil(totalCount / limit),
+            isFetched: true,
+          };
         }
       }
     } catch (error) {
@@ -384,10 +381,10 @@ const blogsData = {
     return insertedOutput;
   },
   getABlog: async (req, res) => {
-    const data= await BlogsCollection.findOne({ _id: req.params.id });
-    data.readCount=data?.readCount?data.readCount+1:1
+    const data = await BlogsCollection.findOne({ _id: req.params.id });
+    data.readCount = data?.readCount ? data.readCount + 1 : 1;
     await data.save();
-    return data
+    return data;
   },
   updateABlog: async (req, res) => {
     let updatedOutput = {
