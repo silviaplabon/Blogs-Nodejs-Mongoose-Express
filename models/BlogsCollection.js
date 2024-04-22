@@ -1,59 +1,67 @@
-
-const mongoose = require("mongoose");
-const RatingsCollection = require("./RatingsCollection");
+const mongoose = require('mongoose');
+const RatingsCollection = require('./RatingsCollection');
 
 const Schema = mongoose.Schema;
 const RatingsCollectionSchema = new Schema({
-  user: { type:mongoose.ObjectId, ref: 'User', required: true }, 
+  user: { type: mongoose.ObjectId, ref: 'User', required: true },
   rating: { type: Number, required: true, min: 1, max: 5 },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 const ReactionsCollectionSchema = new Schema({
-  user: { type:mongoose.ObjectId, ref: 'User', required: true }, 
-  reaction: { type: Boolean, required: true},
-  createdAt: { type: Date, default: Date.now }
+  user: { type: mongoose.ObjectId, ref: 'User', required: true },
+  reaction: { type: Boolean, required: true },
+  createdAt: { type: Date, default: Date.now },
 });
 
 let BlogsCollectionSchema = new Schema({
   _id: {
-    type: mongoose.ObjectId
+    type: mongoose.ObjectId,
   },
   userId: {
-    type: mongoose.ObjectId
+    type: mongoose.ObjectId,
   },
- name:{
-  type:String
- },
- email:{
-  type:String
- },
+  name: {
+    type: String,
+  },
+  email: {
+    type: String,
+  },
   title: {
-    type: String
+    type: String,
   },
   subTitle: {
-    type: String
+    type: String,
   },
   category: {
-    type: String
+    type: String,
   },
   subCategory: {
-    type: String
+    type: String,
   },
   shortDescription: {
-    type: String
+    type: String,
   },
   longDescription: {
-    type: String
+    type: String,
   },
-  featuredImage:{
-    type:String
+  featuredImage: {
+    type: String,
   },
   createdTime: {
-    type: Number
+    type: Number,
   },
-  ratings:[RatingsCollectionSchema],
-  reactions:[ReactionsCollectionSchema]
+  isEnabledPaidService: {
+    type: Boolean,
+  },
+  readCount:{
+    type:Number
+  },
+  ratings: [RatingsCollectionSchema],
+  reactions: [ReactionsCollectionSchema],
 });
 
-const BlogsCollection = mongoose.model("blogs_collection", BlogsCollectionSchema);
+const BlogsCollection = mongoose.model(
+  'blogs_collection',
+  BlogsCollectionSchema,
+);
 module.exports = BlogsCollection;

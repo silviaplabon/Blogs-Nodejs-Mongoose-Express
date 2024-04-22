@@ -6,13 +6,15 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "format": "prettier --write \"{controllers,middleware,routes,utils}/**/*.{js,ts}\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "silvia satoar plabon",
   "license": "ISC",
   "devDependencies": {
     "eslint": "8.28.0",
-    "nodemon": "2.0.7"
+    "nodemon": "2.0.7",
+    "prettier": "^3.2.5"
   },
   "dependencies": {
     "cors": "2.8.5",
