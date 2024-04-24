@@ -8,10 +8,14 @@ const responseHandler = require('./utils/responseHandler');
 const blogsRoute = require('./routes/blogsRoute');
 const usersRoute = require('./routes/usersRoute');
 const bodyParser = require('body-parser');
+const serverless = require("serverless-http");
 app.use(bodyParser.json());
 const mongoose = require('mongoose');
 app.use('/blogs', blogsRoute);
 app.use('/users', usersRoute);
+
+
+
 
 app.use((err, req, res, next) => {
   if (err) {
@@ -32,4 +36,5 @@ mongoose
 
 const port = process.env.PORT || 3001;
 app.listen(port, () => console.log('Port:', port));
-module.exports = app;
+// module.exports = app;
+module.exports.handler = serverless(app);

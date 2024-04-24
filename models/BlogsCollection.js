@@ -6,11 +6,19 @@ const RatingsCollectionSchema = new Schema({
   user: { type: mongoose.ObjectId, ref: 'User', required: true },
   rating: { type: Number, required: true, min: 1, max: 5 },
   createdAt: { type: Date, default: Date.now },
+  postId: {
+    type: String,
+    default: ""
+}
 });
 const ReactionsCollectionSchema = new Schema({
   user: { type: mongoose.ObjectId, ref: 'User', required: true },
   reaction: { type: Boolean, required: true },
   createdAt: { type: Date, default: Date.now },
+  postId: {
+    type: String,
+    default: ""
+}
 });
 
 let BlogsCollectionSchema = new Schema({
@@ -20,7 +28,7 @@ let BlogsCollectionSchema = new Schema({
   userId: {
     type: mongoose.ObjectId,
   },
-  name: {
+  userName: {
     type: String,
   },
   email: {
@@ -45,6 +53,9 @@ let BlogsCollectionSchema = new Schema({
     type: String,
   },
   featuredImage: {
+    type: String,
+  },
+  profileImage: {
     type: String,
   },
   createdTime: {

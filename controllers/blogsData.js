@@ -80,7 +80,6 @@ const blogsData = {
   },
   getAllSearchedBlogs: async (req, res) => {
     try {
-      const searchText = req.query.searchText;
 
       const page = parseInt(req.query.page) || 1;
 
@@ -88,25 +87,23 @@ const blogsData = {
 
       const skip = (page - 1) * limit;
 
-      const data = await BlogsCollection.aggregate([
-        {
-          $match: {
-            title: { $regex: 'Life', $options: 'g' },
-          },
-        },
-        { $sort: { createdTime: -1 } },
-        { $skip: skip },
-        { $limit: limit },
-      ]);
+      let query = {};
+      if (req.query.email) {
+        query.email = req.query.email;
+      }
+      if (req.query.title) {
+        query.title = { $regex: `${req.query.title}`, $options: 'i' };
+      }
+      if (req.query.category) {
+        query.category = { $regex: `${req.query.category}`, $options: 'i' };
+      }
 
-      const totalCount = await BlogsCollection.countDocuments({
-        $search: {
-          regex: {
-            path: 'title',
-            query: '(.*) Life',
-          },
-        },
-      });
+  
+      const totalCount = await BlogsCollection.countDocuments(query);
+      const data = await BlogsCollection.find(query)
+          .skip(skip)
+          .limit(limit);
+
       return {
         blogs: data,
         count: Math.ceil(totalCount / limit),
@@ -130,7 +127,6 @@ const blogsData = {
           req.query.category.charAt(0)?.toUpperCase() +
           req.query.category?.slice(1);
       }
-      console.log(category, 'category');
       if (category != undefined && category !== '') {
         const data = await BlogsCollection.aggregate([
           {
@@ -183,18 +179,45 @@ const blogsData = {
       const skip = (page - 1) * limit;
 
       if (req.params?.tabId == 'LATEST') {
+        if (category != undefined && category !== '') {
+        const data = await BlogsCollection.aggregate([
+          {
+            $match: 
+           
+                {
+                  category: category,
+                },
+          },
+          { $sort: { createdTime: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+        ]);
+
+        const totalCount = await BlogsCollection.countDocuments({ 
+          category: category,
+        });
+        return {
+          blogs: data,
+          count: Math.ceil(totalCount / limit),
+          isFetched: true,
+        };
+      }else{
         const data = await BlogsCollection.aggregate([
           { $sort: { createdTime: -1 } },
           { $skip: skip },
           { $limit: limit },
         ]);
 
-        const totalCount = await BlogsCollection.countDocuments();
+        const totalCount = await BlogsCollection.countDocuments({ 
+          category: category,
+        });
         return {
           blogs: data,
           count: Math.ceil(totalCount / limit),
           isFetched: true,
         };
+      }
+
       } else if (req.params?.tabId == 'SPECIALS') {
         if (category != undefined && category !== '') {
           const data = await BlogsCollection.aggregate([
@@ -393,7 +416,7 @@ const blogsData = {
     };
     console.log({ ...req.body });
     await BlogsCollection.updateOne(
-      { _id: req.params.id },
+      { _id: mongoose.Types.ObjectId(req.params.id) },
       {
         $set: { ...req.body },
       },
@@ -420,30 +443,7 @@ const blogsData = {
         deletedOutput.errorMessage = e.message;
       });
     return deletedOutput;
-  },
-  getFilterBlogs: async (req, res) => {
-    let query = {};
-    if (req.body.minAge) {
-      query.minAge = { $gte: `${req.body.minAge}` };
-    }
-    if (req.body.maxAge) {
-      query.maxAge = { $lte: `${req.body.maxAge}` };
-    }
-    if (req.body.interests) {
-      query.interests = { $in: [...req.body.interests] };
-    }
-    if (req.body.email) {
-      query.email = req.body.email;
-    }
-    if (req.body.title) {
-      query.title = { $regex: `${req.body.title}`, $options: 'i' };
-    }
-    if (req.body.subTitle) {
-      query.subTitle = { $regex: `${req.body.subTitle}`, $options: 'i' };
-    }
-    const data = await BlogsCollection.find({ ...query });
-    return data;
-  },
+  }
 };
 
 module.exports = blogsData;

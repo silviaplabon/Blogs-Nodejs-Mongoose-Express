@@ -20,9 +20,9 @@ const ReactionsCollection = require('../models/ReactionCollection');
 const Comment = require('../models/CommentsCollection');
 const { default: mongoose } = require('mongoose');
 const CommentsCollection = require('../models/CommentsCollection');
-
+const cors=require("cors")
 const router = express.Router();
-router.get('/', async (req, res) => {
+router.get('/',cors(), async (req, res) => {
   try {
     const blogsData = await getAllBlogs(req, res);
     if (blogsData.isFetched) {
@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.get('/searchedBlogs', async (req, res) => {
+router.get('/search',cors(), async (req, res) => {
   try {
     const blogsData = await getAllSearchedBlogs(req, res);
     if (blogsData.isFetched) {
@@ -68,7 +68,7 @@ router.get('/searchedBlogs', async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.get('/tabs/:tabId', async (req, res) => {
+router.get('/tabs/:tabId', cors(),async (req, res) => {
   try {
     const blogsData = await getAllBlogsByTabs(req, res);
     if (blogsData.isFetched) {
@@ -114,7 +114,7 @@ router.get('/randomBlogs', async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.post('/', async (req, res) => {
+router.post('/',cors(), async (req, res) => {
   try {
     const result = await addABlog(req, res);
     if (result.isInserted == true) {
@@ -136,7 +136,7 @@ router.post('/', async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.patch('/:id', authenticateToken, async (req, res) => {
+router.patch('/:id',cors(), authenticateToken, async (req, res) => {
   try {
     const result = await updateABlog(req, res);
     if ((await result.modifiedCount) > 0) {
@@ -158,7 +158,7 @@ router.patch('/:id', authenticateToken, async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', cors(),authenticateToken, async (req, res) => {
   try {
     const result = await deleteABlog(req, res);
     if (result.deletedCount > 0) {
@@ -180,7 +180,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.get('/:id', async (req, res) => {
+router.get('/:id',cors(), async (req, res) => {
   try {
     const blog = await getABlog(req, res);
     console.log(blog, ':@@@@@@@blog.com');
@@ -203,7 +203,7 @@ router.get('/:id', async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.post('/allBlogs', async (req, res) => {
+router.post('/allBlogs',cors(), async (req, res) => {
   try {
     const blogs = await getFilterBlogs(req, res);
     await responseHandler.sendSuccess(
@@ -216,7 +216,7 @@ router.post('/allBlogs', async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.post('/:blogId/reviews', async (req, res) => {
+router.post('/:blogId/reviews',cors(), async (req, res) => {
   try {
     const { rating, comment, userId } = req.body;
 
@@ -230,7 +230,7 @@ router.post('/:blogId/reviews', async (req, res) => {
     }
 
     const existingReview = await RatingsCollection.findOne({
-      product: req.params.blogId,
+      postId: req.params.blogId,
       user: userId,
     });
 
@@ -260,6 +260,7 @@ router.post('/:blogId/reviews', async (req, res) => {
         user: userId,
         rating,
         comment,
+        postId:req.params.blogId
       });
       ratings.push(review);
       await review.save();
@@ -277,7 +278,7 @@ router.post('/:blogId/reviews', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
-router.post('/:blogId/reactions', async (req, res) => {
+router.post('/:blogId/reactions', cors(),async (req, res) => {
   try {
     const { reaction, userId } = req.body;
     if (!reaction) {
@@ -294,7 +295,7 @@ router.post('/:blogId/reactions', async (req, res) => {
     }
 
     const existingReaction = await ReactionsCollection.findOne({
-      product: req.params.blogId,
+      postId: req.params.blogId,
       user: userId,
     });
 
@@ -321,6 +322,7 @@ router.post('/:blogId/reactions', async (req, res) => {
       const reactionModel = new ReactionsCollection({
         user: userId,
         reaction,
+        postId: req.params.blogId,
       });
       reactions.push(reactionModel);
       await reactionModel.save();
@@ -340,7 +342,7 @@ router.post('/:blogId/reactions', async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 });
-router.delete('/:postId/deleteAComment', async function(req, res) {
+router.delete('/:postId/deleteAComment',cors(), async function(req, res) {
   try{
   const commentId=req.params.postId;
 
@@ -362,8 +364,31 @@ router.delete('/:postId/deleteAComment', async function(req, res) {
     )
   }
 });
+router.delete('/:postId/deleteABlog',cors(), async function(req, res) {
+  try{
+  const postId=req.params.postId;
 
-router.post('/:commentId/editAComment', async function(req, res) {
+  const result1 = await CommentsCollection.deleteMany({ postId:postId });
+
+  const result2 = await BlogsCollection.deleteOne({ _id:postId });
+  const result3=await ReactionsCollection.deleteMany({ postId:postId });
+  const result4=await RatingsCollection.deleteMany({ postId:postId });
+  await responseHandler.sendSuccess(
+    req,
+    res,
+    CONSTANTS.MESSAGES.DATA_RETRIED_SUCCESSFULLY,
+   {},
+  )
+  }catch(e){
+    responseHandler.sendError(
+      req,
+      res,
+      err.message ? err.message : 'Server Error',
+    )
+  }
+});
+
+router.post('/:commentId/editAComment',cors(), async function(req, res) {
   try{
     let comment = req.body;
     const commentId=req.params.commentId;
@@ -392,7 +417,7 @@ router.post('/:commentId/editAComment', async function(req, res) {
 });
 
 
-router.post('/:blogId/addAComment', async (req, res) => {
+router.post('/:blogId/addAComment',cors(), async (req, res) => {
   const blogId = req.params.blogId;
 
   const { comment, userId,name ,profileImage} = req.body;
@@ -434,7 +459,7 @@ router.post('/:blogId/addAComment', async (req, res) => {
     );
 });
 
-router.get('/comments/:postId', async (req, res) => {
+router.get('/comments/:postId', cors(),async (req, res) => {
   const postId = req.params.postId;
 
   CommentsCollection.find({ postId: postId })

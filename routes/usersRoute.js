@@ -15,8 +15,8 @@ const responseHandler = require('../utils/responseHandler');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const authenticateToken = require('../middleware/authenticateToken');
-
-router.get('/', async (req, res) => {
+const cors=require('cors')
+router.get('/', cors(),async (req, res) => {
   try {
     const blogs = await getAllUser(req, res);
     await responseHandler.sendSuccess(
@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.post('/', async (req, res) => {
+router.post('/', cors(),async (req, res) => {
   try {
     const result = await addAUser(req, res);
     if (result.isInserted == true) {
@@ -72,7 +72,7 @@ router.post('/', async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.patch('/:id', authenticateToken, async (req, res) => {
+router.patch('/:id',cors(), authenticateToken, async (req, res) => {
   try {
     const result = await updateAUser(req, res);
     if ((await result.modifiedCount) > 0) {
@@ -94,7 +94,7 @@ router.patch('/:id', authenticateToken, async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id',cors(), authenticateToken, async (req, res) => {
   try {
     const result = await deleteAUser(req, res);
     if (result.deletedCount > 0) {
@@ -116,7 +116,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id',cors(), authenticateToken, async (req, res) => {
   try {
     const blog = await getAUser(req, res);
     await responseHandler.sendSuccess(
@@ -129,7 +129,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.post('/allUsers', authenticateToken, async (req, res) => {
+router.post('/allUsers',cors(), authenticateToken, async (req, res) => {
   try {
     const blogs = await getFilterUsers(req, res);
     await responseHandler.sendSuccess(
@@ -142,7 +142,7 @@ router.post('/allUsers', authenticateToken, async (req, res) => {
     responseHandler.sendError(req, res, e.message);
   }
 });
-router.post('/login', async (req, res) => {
+router.post('/login',cors(), async (req, res) => {
   try {
     // const auth = new Buffer.from(req.headers.authorization.split(' ')[1], 'base64').toString().split(':');
     const username = req.body.email;
