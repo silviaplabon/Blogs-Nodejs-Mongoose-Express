@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 const mongoose = require('mongoose');
 app.use('/blogs', blogsRoute);
 app.use('/users', usersRoute);
-
+const router = express.Router();
 
 
 
@@ -36,5 +36,7 @@ mongoose
 
 const port = process.env.PORT || 3001;
 app.listen(port, () => console.log('Port:', port));
-// module.exports = app;
+
+module.exports = app;
+app.use("../.netlify/functions/app", router);
 module.exports.handler = serverless(app);

@@ -11,13 +11,12 @@ const {
   getAllSearchedBlogs,
 } = require('../controllers/blogsData');
 const authenticateToken = require('../middleware/authenticateToken');
-
 const CONSTANTS = require('../utils/constants');
 const responseHandler = require('../utils/responseHandler');
 const BlogsCollection = require('../models/BlogsCollection');
 const RatingsCollection = require('../models/RatingsCollection');
 const ReactionsCollection = require('../models/ReactionCollection');
-const Comment = require('../models/CommentsCollection');
+
 const { default: mongoose } = require('mongoose');
 const CommentsCollection = require('../models/CommentsCollection');
 const cors=require("cors")

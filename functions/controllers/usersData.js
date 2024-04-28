@@ -1,5 +1,6 @@
 const UsersCollection = require('../models/usersCollection');
 const CONSTANTS = require('../utils/constants');
+
 const { encryptedPassword } = require('../utils/passwordSettings');
 const usersData = {
   getAllUser: async (req, res) => {

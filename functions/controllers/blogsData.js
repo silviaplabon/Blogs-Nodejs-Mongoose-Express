@@ -1,6 +1,6 @@
 const { query } = require('express');
-const BlogsCollection = require('../models/BlogsCollection');
 const { default: mongoose } = require('mongoose');
+const BlogsCollection = require('../models/BlogsCollection');
 const blogsData = {
   getAllBlogs: async (req, res) => {
     try {

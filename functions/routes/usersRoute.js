@@ -8,14 +8,14 @@ const {
   logIn,
   getAUserByEmail,
   getAllUser,
-} = require('../controllers/usersData');
-const CONSTANTS = require('../utils/constants');
+} =  require('../controllers/usersData');
 const { passwordIsMatched } = require('../utils/passwordSettings');
 const responseHandler = require('../utils/responseHandler');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const authenticateToken = require('../middleware/authenticateToken');
-const cors=require('cors')
+const cors=require('cors');
+const CONSTANTS = require('../utils/constants');
 router.get('/', cors(),async (req, res) => {
   try {
     const blogs = await getAllUser(req, res);
