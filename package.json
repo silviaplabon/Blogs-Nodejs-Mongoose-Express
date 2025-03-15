@@ -8,7 +8,7 @@
     "dev": "nodemon index.js",
     "format": "prettier --write \"{controllers,middleware,routes,utils}/**/*.{js,ts}\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "netlify deploy --prod"
+    "build": "vercel"
   },
   "author": "silvia satoar plabon",
   "license": "ISC",
