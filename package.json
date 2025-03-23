@@ -8,7 +8,7 @@
     "dev": "nodemon index.js",
     "format": "prettier --write \"{controllers,middleware,routes,utils}/**/*.{js,ts}\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "mkdir -p build && cp -r functions/* build/",
+    "build": "tsc && mv dist public",
     "deploy":"vercel --prod"
   },
   "author": "silvia satoar plabon",

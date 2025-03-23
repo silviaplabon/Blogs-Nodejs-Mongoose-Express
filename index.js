@@ -4,9 +4,9 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 app.use(cors());
-const responseHandler = require('./utils/responseHandler');
-const blogsRoute = require('./routes/blogsRoute');
-const usersRoute = require('./routes/usersRoute');
+const responseHandler = require('./functions/utils/responseHandler');
+const blogsRoute = require('./functions/routes/blogsRoute');
+const usersRoute = require('./functions/routes/usersRoute');
 const bodyParser = require('body-parser');
 const serverless = require("serverless-http");
 app.use(bodyParser.json());
@@ -34,9 +34,9 @@ mongoose
   })
   .catch((err) => console.log('MongoDB Connection Error: ', err));
 
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 80
 app.listen(port, () => console.log('Port:', port));
 
 module.exports = app;
-app.use("../.netlify/functions/app", router);
-module.exports.handler = serverless(app);
+// app.use("../.netlify/functions/app", router);
+// module.exports.handler = serverless(app);
